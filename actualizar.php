@@ -1,55 +1,65 @@
 <?php
-require_once 'conexion.php';
-require_once 'clases.php';
+include 'conexion.php';
 
-session_start();
-
-// Verificar si es administrador
-if (!isset($_SESSION['usuario']) || $_SESSION['usuario']['rol'] !== 'admin') {
-    header('Location: login.php');
-    exit();
+// -------------------------
+// Obtener datos de un cliente
+// -------------------------
+if (isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    $stmt = $conexion->prepare("SELECT nombres, apellidos, documento, telefono, correo FROM usuarios WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    echo json_encode($result->fetch_assoc());
+    exit;
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {
-    $conexion = Conexion::conectar();
-    
-    $datosProducto = [
-        'nombre' => $_POST['nombre'],
-        'descripcion' => $_POST['descripcion'],
-        'precio' => $_POST['precio'],
-        'stock' => $_POST['stock'],
-        'id_categoria' => $_POST['id_categoria']
-    ];
-    
-    // Mantener la imagen actual si no se sube una nueva
-    if (isset($_FILES['imagen']) && $_FILES['imagen']['error'] === UPLOAD_ERR_OK) {
-        $nombreImagen = uniqid() . '_' . basename($_FILES['imagen']['name']);
-        $rutaDestino = 'img/productos/' . $nombreImagen;
-        if (move_uploaded_file($_FILES['imagen']['tmp_name'], $rutaDestino)) {
-            $datosProducto['imagen'] = $rutaDestino;
-        }
+// -------------------------
+// Obtener lista de clientes
+// -------------------------
+if (isset($_GET['usuarios']) && $_GET['usuarios'] == 1) {
+    $query = "SELECT id, nombres, apellidos FROM usuarios WHERE rol = 'cliente'";
+    $result = $conexion->query($query);
+    $usuarios = [];
+
+    while ($row = $result->fetch_assoc()) {
+        $usuarios[] = $row;
     }
+    echo json_encode($usuarios);
+    exit;
+}
+
+// -------------------------
+// Actualizar cliente
+// -------------------------
+if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    $id = $_POST["id"];
+    $nombres = $_POST["nombres"];
+    $apellidos = $_POST["apellidos"];
+    $documento = $_POST["documento"];
+    $telefono = $_POST["telefono"];
+    $correo = $_POST["correo"];
+    $contrasena = !empty($_POST["contrasena"]) ? password_hash($_POST["contrasena"], PASSWORD_DEFAULT) : null;
+
+    $sql = "UPDATE usuarios SET 
+            nombres=?, apellidos=?, documento=?, telefono=?, correo=?" .
+            ($contrasena ? ", contrasena=?" : "") . " WHERE id=?";
     
-    try {
-        $producto = ProductoFactory::crear('desayuno', $conexion, $datosProducto);
-        $producto->id = $_POST['id'];
-        
-        if ($producto->actualizar()) {
-            $_SESSION['exito'] = "Producto actualizado correctamente";
-        } else {
-            $_SESSION['error'] = "Error al actualizar producto";
-        }
-        
-        header('Location: admin/productos.php');
-        exit();
-        
-    } catch (Exception $e) {
-        $_SESSION['error'] = "Error: " . $e->getMessage();
-        header('Location: admin/editar_producto.php?id='.$_POST['id']);
-        exit();
+    $stmt = $conexion->prepare($sql);
+
+    if ($contrasena) {
+        $stmt->bind_param("ssssssi", $nombres, $apellidos, $documento, $telefono, $correo, $contrasena, $id);
+    } else {
+        $stmt->bind_param("sssssi", $nombres, $apellidos, $documento, $telefono, $correo, $id);
     }
-} else {
-    header('Location: admin/productos.php');
-    exit();
+
+    if ($stmt->execute()) {
+        echo json_encode(["success" => true, "message" => "Cliente actualizado correctamente"]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error al actualizar el cliente"]);
+    }
+
+    $stmt->close();
+    exit;
 }
 ?>

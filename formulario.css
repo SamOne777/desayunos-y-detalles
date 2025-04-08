@@ -1,0 +1,117 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Estilos generales del body */
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #FFC0CB, #FF69B4);
+    min-height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+    color: #333;
+}
+
+/* Contenedor principal del formulario */
+.contenedorForm {
+    width: 450px;
+    padding: 40px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+/* Título principal */
+.titulo {
+    color: #E91E63;
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.titulo:hover {
+    transform: scale(1.05);
+    cursor: default;
+}
+
+/* Subtítulo */
+.subtitulo {
+    color: #555;
+    margin-bottom: 30px;
+    font-size: 18px;
+    font-weight: 400;
+}
+
+/* Campos de entrada */
+input, select {
+    width: 100%;
+    padding: 12px 15px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background-color: #fff;
+    margin-bottom: 15px;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+input:focus, select:focus {
+    border-color: #E91E63;
+    box-shadow: 0 0 0 2px rgba(233, 30, 99, 0.2);
+}
+
+/* Botón */
+button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    color: white;
+    background-color: #E91E63;
+    font-size: 16px;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #C2185B;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(233, 30, 99, 0.3);
+}
+
+/* Estilos para el select */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 15px;
+    padding-right: 40px;
+}
+
+/* Placeholders */
+::placeholder {
+    color: #999;
+    opacity: 1;
+}
+
+/* Mensaje de error (opcional) */
+.mensaje-error {
+    color: #FF5252;
+    font-size: 14px;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    text-align: left;
+}

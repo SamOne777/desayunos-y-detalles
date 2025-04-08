@@ -1,28 +1,12 @@
-<?php
-class Conexion {
-    private static $host = "localhost";
-    private static $dbname = "desayunos_detalles";
-    private static $username = "root";
-    private static $password = "admin";
-    private static $conexion = null;
+<?php 
+$host = "localhost";
+$dbName = "desayunos_detalles";
+$userName = "root";
+$password = "admin";
 
-    public static function conectar() {
-        if (self::$conexion === null) {
-            try {
-                self::$conexion = new PDO(
-                    "mysql:host=".self::$host.";dbname=".self::$dbname.";charset=utf8",
-                    self::$username,
-                    self::$password,
-                    [
-                        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-                    ]
-                );
-            } catch (PDOException $e) {
-                die("Error en la conexión: " . $e->getMessage());
-            }
-        }
-        return self::$conexion;
-    }
+$conexion = new mysqli($host, $userName, $password, $dbName);
+
+if ($conexion->connect_error) {
+    die("Error al conectar la base de datos: " . $conexion->connect_error);
 }
 ?>

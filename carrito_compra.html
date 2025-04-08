@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Carrito de Compras</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <style>
+    .product-img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+    }
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1100;
+    }
+    .stock-badge {
+      font-size: 0.75rem;
+    }
+    .quantity-input {
+      width: 70px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="#">Desayunos y Detalles</a>
+      <div class="ms-auto">
+        <a href="catalogo.html" class="btn btn-light">
+          <i class="bi bi-arrow-left"></i> Seguir comprando
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <h1 class="text-center mb-5">Tu Carrito de Compras</h1>
+
+    <div class="row">
+      <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div id="carrito-items">
+              <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando tu carrito...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="card shadow-sm sticky-top" style="top: 20px;">
+          <div class="card-body">
+            <h5 class="card-title">Resumen del Pedido</h5>
+            <hr>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Subtotal:</span>
+              <span id="subtotal">$0.00</span>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+              <span>Envío:</span>
+              <span>$0.00</span>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between fw-bold">
+              <span>Total:</span>
+              <span id="total">$0.00</span>
+            </div>
+            <hr>
+            
+            <form id="formPedido">
+              <div class="mb-3">
+                <label for="direccion" class="form-label">Dirección de entrega *</label>
+                <textarea class="form-control" id="direccion" name="direccion" rows="3" required></textarea>
+              </div>
+              
+              <div class="mb-3">
+                <label for="instrucciones" class="form-label">Instrucciones especiales</label>
+                <textarea class="form-control" id="instrucciones" name="instrucciones" rows="2"></textarea>
+              </div>
+              
+              <button type="submit" class="btn btn-primary w-100 py-2" id="btn-realizar-pedido">
+                <i class="bi bi-check-circle"></i> Realizar Pedido
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    // Variables globales
+    let carritoActual = [];
+    const toastContainer = document.getElementById('toast-container');
+
+    // Cargar carrito al iniciar
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarCarrito();
+      setupEventListeners();
+    });
+
+    // Función para cargar el carrito
+    async function cargarCarrito() {
+      try {
+        mostrarCarga(true);
+        
+        const response = await fetch(`carrito_compra.php?action=get&timestamp=${Date.now()}`);
+        if (!response.ok) throw new Error('Error al cargar carrito');
+        
+        const data = await response.json();
+        
+        if (!data.success) throw new Error(data.error || 'Error desconocido');
+        
+        carritoActual = data.carrito || [];
+        mostrarProductos(carritoActual);
+        calcularTotales(carritoActual);
+        
+      } catch (error) {
+        mostrarError(error.message);
+      } finally {
+        mostrarCarga(false);
+      }
+    }
+
+    // Función para mostrar productos en el carrito
+    function mostrarProductos(carrito) {
+      const container = document.getElementById('carrito-items');
+      
+      if (!carrito || carrito.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-5">
+            <i class="bi bi-cart-x text-muted" style="font-size: 3rem;"></i>
+            <h5 class="mt-3">Tu carrito está vacío</h5>
+            <a href="catalogo.html" class="btn btn-primary mt-2">Ir al catálogo</a>
+          </div>
+        `;
+        document.getElementById('btn-realizar-pedido').disabled = true;
+        return;
+      }
+      
+      document.getElementById('btn-realizar-pedido').disabled = false;
+
+      let html = '';
+      carrito.forEach(item => {
+        // Asegurar que los valores numéricos sean correctos
+        const precio = parseFloat(item.precio);
+        const cantidad = parseInt(item.cantidad);
+        const subtotal = precio * cantidad;
+        const stockDisponible = parseInt(item.stock);
+        
+        html += `
+          <div class="row mb-3 align-items-center" data-id="${item.producto_id}">
+            <div class="col-2">
+              <img src="${item.imagen}" class="img-fluid rounded product-img" alt="${item.nombre}" 
+                   onerror="this.src='img/placeholder.jpg'">
+            </div>
+            <div class="col-5">
+              <h6 class="mb-1">${item.nombre}</h6>
+              <p class="text-muted small mb-1">${item.categoria}</p>
+              <p class="mb-0 text-primary">$${precio.toFixed(2)}</p>
+            </div>
+            <div class="col-3">
+              <input type="number" class="form-control quantity-input cantidad" 
+                     value="${cantidad}" min="1" max="${stockDisponible}"
+                     ${stockDisponible <= 0 ? 'disabled' : ''}>
+              ${stockDisponible < cantidad ? 
+                '<span class="badge bg-danger stock-badge mt-1">Stock insuficiente</span>' : 
+                (stockDisponible <= 0 ? 
+                  '<span class="badge bg-secondary stock-badge mt-1">Agotado</span>' : 
+                  '<span class="badge bg-success stock-badge mt-1">Disponible</span>')}
+            </div>
+            <div class="col-2 text-end">
+              <button class="btn btn-outline-danger btn-sm eliminar">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+          <hr>
+        `;
+      });
+      
+      container.innerHTML = html;
+
+      // Configurar eventos para actualizar cantidades
+      document.querySelectorAll('.cantidad').forEach(input => {
+        input.addEventListener('change', async function() {
+          const row = this.closest('.row');
+          const productoId = parseInt(row.getAttribute('data-id'));
+          const nuevaCantidad = parseInt(this.value);
+          
+          if (nuevaCantidad > 0) {
+            await actualizarCarrito(productoId, nuevaCantidad);
+          }
+        });
+      });
+
+      // Configurar eventos para eliminar productos
+      document.querySelectorAll('.eliminar').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const row = this.closest('.row');
+          const productoId = parseInt(row.getAttribute('data-id'));
+          await actualizarCarrito(productoId, 0);
+        });
+      });
+    }
+
+    // Función para actualizar el carrito
+    async function actualizarCarrito(productoId, cantidad) {
+      try {
+        const btn = cantidad === 0 ? 
+          document.querySelector(`.eliminar[data-id="${productoId}"]`) :
+          document.querySelector(`.cantidad[data-id="${productoId}"]`);
+        
+        if (btn) {
+          btn.disabled = true;
+          if (cantidad === 0) {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span>';
+          }
+        }
+
+        const response = await fetch('procesar.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `actualizar_carrito=1&carrito[0][producto_id]=${productoId}&carrito[0][cantidad]=${cantidad}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showToast('success', cantidad === 0 ? 'Producto eliminado' : 'Cantidad actualizada');
+          await cargarCarrito(); // Recargar todo el carrito
+        } else {
+          throw new Error(result.error || 'Error al actualizar carrito');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        showToast('danger', error.message);
+        await cargarCarrito(); // Recargar para estado consistente
+      }
+    }
+
+    // Función para calcular totales
+    function calcularTotales(carrito) {
+      let subtotal = 0;
+      
+      carrito.forEach(item => {
+        const precio = parseFloat(item.precio);
+        const cantidad = parseInt(item.cantidad);
+        subtotal += precio * cantidad;
+      });
+      
+      document.getElementById('subtotal').textContent = `$${subtotal.toFixed(2)}`;
+      document.getElementById('total').textContent = `$${subtotal.toFixed(2)}`;
+    }
+
+    // Función para mostrar/ocultar carga
+    function mostrarCarga(mostrar) {
+      const container = document.getElementById('carrito-items');
+      if (mostrar) {
+        container.innerHTML = `
+          <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mt-2">Cargando tu carrito...</p>
+          </div>
+        `;
+      }
+    }
+
+    // Función para mostrar error
+    function mostrarError(mensaje) {
+      const container = document.getElementById('carrito-items');
+      container.innerHTML = `
+        <div class="text-center py-5">
+          <i class="bi bi-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+          <h5 class="mt-3">Error al cargar el carrito</h5>
+          <p class="text-muted">${mensaje}</p>
+          <button class="btn btn-primary mt-2" onclick="cargarCarrito()">
+            <i class="bi bi-arrow-repeat"></i> Reintentar
+          </button>
+        </div>
+      `;
+    }
+
+    // Función para mostrar notificación toast
+    function showToast(type, message) {
+      const toast = document.createElement('div');
+      toast.className = `toast show align-items-center text-white bg-${type} border-0`;
+      toast.role = 'alert';
+      toast.innerHTML = `
+        <div class="d-flex">
+          <div class="toast-body">
+            ${message}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      `;
+      toastContainer.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Configurar event listeners
+    function setupEventListeners() {
+      // Manejar el formulario de pedido
+      document.getElementById('formPedido').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validar que el carrito no esté vacío
+        if (carritoActual.length === 0) {
+          showToast('danger', 'No puedes realizar un pedido con el carrito vacío');
+          return;
+        }
+
+        // Validar stock antes de proceder
+        const sinStock = carritoActual.some(item => parseInt(item.stock) < parseInt(item.cantidad));
+        if (sinStock) {
+          showToast('danger', 'Algunos productos no tienen suficiente stock');
+          return;
+        }
+
+        const btn = document.getElementById('btn-realizar-pedido');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Procesando...';
+
+        try {
+          const direccion = document.getElementById('direccion').value.trim();
+          if (!direccion) {
+            throw new Error('La dirección de entrega es obligatoria');
+          }
+
+          const formData = new FormData(this);
+          formData.append('realizar_pedido', '1');
+
+          const response = await fetch('procesar.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showToast('success', result.message);
+            // Redirigir a página de confirmación después de 2 segundos
+            setTimeout(() => {
+              window.location.href = `confirmacion.html?pedido_id=${result.pedido_id}`;
+            }, 2000);
+          } else {
+            throw new Error(result.error || 'Error al realizar el pedido');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showToast('danger', error.message);
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-check-circle"></i> Realizar Pedido';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

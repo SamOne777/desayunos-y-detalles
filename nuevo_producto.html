@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo Producto</title>
+</head>
+<body>
+    <h1>Agregar Nuevo Producto</h1>
+    <form action="procesar.php" method="POST">
+        <input type="hidden" name="nuevo_producto" value="1">
+        
+        <label for="nombre">Nombre del producto:</label>
+        <input type="text" id="nombre" name="nombre" required><br>
+        
+        <label for="descripcion">Descripción:</label>
+        <textarea id="descripcion" name="descripcion" required></textarea><br>
+        
+        <label for="precio">Precio:</label>
+        <input type="number" id="precio" name="precio" step="0.01" min="0" required><br>
+        
+        <label for="categoria">Categoría:</label>
+        <select id="categoria" name="categoria" required>
+            <option value="desayuno">Desayuno</option>
+            <option value="detalle">Detalle</option>
+            <option value="combo">Combo</option>
+        </select><br>
+        
+        <label for="imagen">Imagen (URL):</label>
+        <input type="text" id="imagen" name="imagen"><br>
+        
+        <label for="stock">Stock disponible:</label>
+        <input type="number" id="stock" name="stock" min="0" value="0"><br>
+        
+        <label for="destacado">Destacado:</label>
+        <input type="checkbox" id="destacado" name="destacado" value="1"><br>
+        
+        <button type="submit">Guardar Producto</button>
+    </form>
+</body>
+</html>

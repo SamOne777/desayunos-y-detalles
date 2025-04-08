@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Actualizar Cliente</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form {
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        label { display: block; margin-top: 10px; }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        button:hover { background-color: #45a049; }
+        h1 { text-align: center; color: #333; }
+    </style>
+</head>
+<body>
+
+<h1>Actualizar Cliente</h1>
+
+<form id="formActualizar">
+    <label for="id">Selecciona el Cliente:</label>
+    <select name="id" id="id" required>
+        <option value="">--Selecciona un Cliente--</option>
+    </select>
+
+    <label for="nombres">Nombres:</label>
+    <input type="text" name="nombres" id="nombres" required>
+
+    <label for="apellidos">Apellidos:</label>
+    <input type="text" name="apellidos" id="apellidos" required>
+
+    <label for="documento">Documento:</label>
+    <input type="text" name="documento" id="documento" required>
+
+    <label for="telefono">Teléfono:</label>
+    <input type="text" name="telefono" id="telefono" required>
+
+    <label for="correo">Correo:</label>
+    <input type="email" name="correo" id="correo" required>
+
+    <label for="contrasena">Nueva Contraseña (opcional):</label>
+    <input type="password" name="contrasena" id="contrasena">
+
+    <button type="submit">Actualizar</button>
+</form>
+
+<script>
+// Cargar lista de clientes al iniciar
+fetch('actualizar.php?usuarios=1')
+    .then(res => res.json())
+    .then(data => {
+        const select = document.getElementById('id');
+        data.forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.id;
+            option.textContent = `ID: ${usuario.id} - ${usuario.nombres} ${usuario.apellidos}`;
+            select.appendChild(option);
+        });
+    });
+
+// Al seleccionar cliente, cargar sus datos
+document.getElementById('id').addEventListener('change', function () {
+    const id = this.value;
+    if (id) {
+        fetch(`actualizar.php?id=${id}`)
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('nombres').value = data.nombres || '';
+                document.getElementById('apellidos').value = data.apellidos || '';
+                document.getElementById('documento').value = data.documento || '';
+                document.getElementById('telefono').value = data.telefono || '';
+                document.getElementById('correo').value = data.correo || '';
+            });
+    }
+});
+
+// Enviar formulario por AJAX
+document.getElementById('formActualizar').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch('actualizar.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            document.getElementById('formActualizar').reset();
+            document.getElementById('id').selectedIndex = 0;
+        }
+    });
+});
+</script>
+
+</body>
+</html>

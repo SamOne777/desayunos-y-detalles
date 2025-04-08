@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Eliminar Cliente - Desayunos y Detalles</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #e91e63;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #e91e63;
+            color: white;
+            padding: 12px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #c2185b;
+        }
+        .mensaje {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .exito { background: #dff0d8; color: #3c763d; }
+        .error { background: #f2dede; color: #a94442; }
+        .advertencia {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #fff3cd;
+            border-radius: 5px;
+            border: 1px solid #ffeeba;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Eliminar Cliente</h1>
+
+    <form id="formBorrar">
+        <div class="form-group">
+            <label for="correo">Selecciona el cliente por correo:</label>
+            <select name="correo" id="correo" required>
+                <option value="">-- Selecciona un Cliente --</option>
+            </select>
+        </div>
+        <button type="submit">Eliminar Cliente</button>
+    </form>
+
+    <div class="mensaje" id="mensaje" style="display:none;"></div>
+
+    <div class="advertencia">
+        <strong>¡Advertencia!</strong> Esta acción eliminará permanentemente al cliente. No se puede deshacer.
+    </div>
+</div>
+
+<script>
+// Cargar lista de clientes
+fetch('borrar_cliente.php?listar=1')
+    .then(response => response.json())
+    .then(data => {
+        const select = document.getElementById('correo');
+        data.forEach(cliente => {
+            const option = document.createElement('option');
+            option.value = cliente.correo;
+            option.textContent = `${cliente.nombres} ${cliente.apellidos} (${cliente.correo})`;
+            select.appendChild(option);
+        });
+    });
+
+// Manejar envío del formulario
+document.getElementById('formBorrar').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+
+    fetch('borrar_cliente.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+        const mensaje = document.getElementById('mensaje');
+        mensaje.textContent = data.message;
+        mensaje.className = 'mensaje ' + (data.success ? 'exito' : 'error');
+        mensaje.style.display = 'block';
+
+        if (data.success) {
+            this.reset();
+            document.getElementById('correo').innerHTML = '<option value="">-- Selecciona un Cliente --</option>';
+            // Vuelve a cargar la lista actualizada
+            fetch('borrar_cliente.php?listar=1')
+                .then(r => r.json())
+                .then(clientes => {
+                    clientes.forEach(cliente => {
+                        const option = document.createElement('option');
+                        option.value = cliente.correo;
+                        option.textContent = `${cliente.nombres} ${cliente.apellidos} (${cliente.correo})`;
+                        document.getElementById('correo').appendChild(option);
+                    });
+                });
+        }
+    });
+});
+</script>
+
+</body>
+</html>
